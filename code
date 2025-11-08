@@ -1,0 +1,56 @@
+import argparse
+import itertools
+import re
+import zxcvbn
+from datetime import datetime
+
+def leetspeak(word):
+    mapping = str.maketrans("aAeEiIoOsStT", "443311005577")
+    return word.translate(mapping)
+
+def generate_variations(words):
+    variations = set()
+    years = [str(y) for y in range(datetime.now().year - 30, datetime.now().year + 6)]
+    specials = ["!", "@", "#", "$", "%", "&", "*"]
+    numbers = [str(n) for n in range(0, 1000)]
+
+    for w in words:
+        basics = [w, w.lower(), w.upper(), w.capitalize(), leetspeak(w)]
+        for base in basics:
+            variations.add(base)
+            for s in specials:
+                variations.add(f"{base}{s}")
+                variations.add(f"{s}{base}")
+            for n in numbers:
+                variations.add(f"{base}{n}")
+            for y in years:
+                variations.add(f"{base}{y}")
+    return variations
+
+def analyze_password(password):
+    result = zxcvbn.zxcvbn(password)
+    print(f"\nPassword: {password}")
+    print(f"Score: {result['score']} / 4")
+    print(f"Crack Time (Online): {result['crack_times_display']['online_no_throttling_10_per_second']}")
+    print(f"Entropy: {result['entropy']:.2f} bits\n")
+
+def main():
+    parser = argparse.ArgumentParser(description="Secure Password Toolkit CLI")
+    parser.add_argument("--password", help="Password to analyze")
+    parser.add_argument("--inputs", nargs="*", help="Custom words for wordlist (e.g. name, pet, date)")
+    parser.add_argument("--export", help="Export file name (e.g. wordlist.txt)", default="wordlist.txt")
+    args = parser.parse_args()
+
+    if args.password:
+        analyze_password(args.password)
+
+    if args.inputs:
+        print("\n[+] Generating custom wordlist...")
+        words = [re.sub(r'\W+', '', w) for w in args.inputs]
+        wordlist = generate_variations(words)
+        with open(args.export, "w") as f:
+            f.write("\n".join(wordlist))
+        print(f"[✔] Wordlist generated: {args.export} ({len(wordlist)} entries)")
+
+if __name__ == "__main__":
+    main()
