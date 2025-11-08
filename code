@@ -54,3 +54,65 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+###src/lib/utils.ts
+
+export function calculateEntropy(password: string): number {
+  const charset = new Set(password).size;
+  return Math.round(password.length * Math.log2(charset || 1));
+}
+
+export function estimateCrackTime(entropy: number): string {
+  const guessesPerSecond = 1e9; // billion guesses/sec
+  const seconds = Math.pow(2, entropy) / guessesPerSecond;
+  const minutes = seconds / 60;
+  const hours = minutes / 60;
+  const days = hours / 24;
+  if (days > 365) return `${(days / 365).toFixed(1)} years`;
+  if (hours > 24) return `${days.toFixed(1)} days`;
+  if (minutes > 60) return `${hours.toFixed(1)} hours`;
+  return `${minutes.toFixed(1)} minutes`;
+}
+
+
+
+
+#####src/components/PasswordAnalyzer.tsx
+
+
+import React, { useState } from "react";
+import { calculateEntropy, estimateCrackTime } from "../lib/utils";
+
+const PasswordAnalyzer: React.FC = () => {
+  const [password, setPassword] = useState("");
+  const entropy = calculateEntropy(password);
+  const strength =
+    entropy < 30 ? "Weak" :
+    entropy < 50 ? "Fair" :
+    entropy < 70 ? "Good" :
+    entropy < 90 ? "Strong" : "Very Strong";
+
+  return (
+    <div className="p-4 bg-white dark:bg-gray-900 rounded-2xl shadow">
+      <h2 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">Password Strength Analyzer</h2>
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Enter your password..."
+        className="w-full p-2 border rounded mb-3"
+      />
+      {password && (
+        <div className="text-sm text-gray-700 dark:text-gray-300">
+          <p>Entropy: {entropy} bits</p>
+          <p>Strength: <strong>{strength}</strong></p>
+          <p>Estimated crack time: {estimateCrackTime(entropy)}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PasswordAnalyzer;
+
